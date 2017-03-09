@@ -8,9 +8,9 @@ for details see code
 
 ## dependence
 
-* [OpenCV2 — Open source computer vision](opencv.org)
-* [plog — Portable, simple and extensible C++ logging library](github.com/SergiusTheBest/plog)
-* [kaguya — C++ binding to Lua — used for configuration](github.com/satoren/kaguya)
+* [OpenCV2 — Open source computer vision](http://opencv.org)
+* [plog — Portable, simple and extensible C++ logging library](https://github.com/SergiusTheBest/plog)
+* [kaguya — C++ binding to Lua — used for configuration](https://github.com/satoren/kaguya)
 
 ## tips
 
