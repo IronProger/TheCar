@@ -3,6 +3,9 @@ project(TheCar)
 
 set(CMAKE_CXX_STANDARD 14)
 
+set(CMAKE_C_COMPILER "gcc")
+set(CMAKE_CXX_COMPILER "g++")
+
 link_libraries (
         opencv_core
         opencv_highgui
@@ -15,7 +18,9 @@ link_libraries (
         opencv_xphoto
         opencv_cvv
         opencv_imgcodecs
+        lua
+        pthread
 )
 
-set(SOURCE_FILES main.cpp TheCarCV.cpp TheCarCV.hpp)
+set(SOURCE_FILES main.cpp TheCarCV.cpp TheCarCV.hpp Config.cpp Config.hpp)
 add_executable(TheCar ${SOURCE_FILES})

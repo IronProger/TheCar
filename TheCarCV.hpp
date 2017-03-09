@@ -7,6 +7,8 @@
 
 #include <functional>
 
+#define WIN if (TheCarCV::getInstance().isShowingWindows())
+
 //TODO: this enum to sign detect hpp
 typedef enum RoadSign
 { ONLY_FORWARD, ONLY_RIGHT, ONLY_LEFT, ONLY_FORWARD_AND_RIGHT, ONLY_FORWARD_AND_LEFT,
@@ -21,27 +23,39 @@ class OnItemFoundListener
 public: int operator ()(
             int mat[RESOLUTION_OF_IMAGE_FOR_DETECTION][RESOLUTION_OF_IMAGE_FOR_DETECTION], int size
     ) { };
-//protected: void accept(int mat[RESOLUTION_OF_IMAGE_FOR_DETECTION][RESOLUTION_OF_IMAGE_FOR_DETECTION], int size);
 };
-//public: int operator ()(
-//            int mat[RESOLUTION_OF_IMAGE_FOR_DETECTION][RESOLUTION_OF_IMAGE_FOR_DETECTION], int size
-//    ) const { };
-//};
 
+// singleton
 class TheCarCV
 {
-protected:
-    OnItemFoundListener onItemFoundListener;
+private:
+    bool createWindows = false;
 
-    int init();
-    void run();
+    TheCarCV ();
+
+    TheCarCV (const TheCarCV &);
+
+    TheCarCV & operator= (TheCarCV &);
+
+    void init ();
 
 public:
-    TheCarCV();
+
+    static TheCarCV & getInstance ()
+    {
+        static TheCarCV instance;
+        return instance;
+    }
+
+    // initialize windows and turn on showing of it
+    void turnOnWindows ();
+
+    // if windows are showing on screen return true, else false
+    bool isShowingWindows ();
 
     // warning: this method block the thread (road sign detection start)
     // thread must be unlocked only at program shutdown
-    void setOnItemFoundListener(OnItemFoundListener onItemFoundListener);
+    void start (OnItemFoundListener onItemFoundListener);
 };
 
 #endif //THECAR_THECARCV_HPP
