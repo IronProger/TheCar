@@ -20,6 +20,7 @@ link_libraries (
         opencv_imgcodecs
         lua
         pthread
+        serial
 )
 
 set(SOURCE_FILES main.cpp TheCarCV.cpp TheCarCV.hpp Config.cpp Config.hpp)

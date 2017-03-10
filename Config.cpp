@@ -11,19 +11,19 @@ using namespace std;
 // state of lua script config
 kaguya::State state;
 
-Config::Config (string configPath) throw(NotFoundException)
+Config::Config (string configPath)
 {
-    try
-    {
-        state.dofile(configPath);
-    }
-    catch (exception e)
-    {
-        throw NotFoundException();
-    }
+    state.dofile(configPath);
 }
 
 string Config::filePath = DEFAULT_CONFIG_PATH;
+
+void Config::setFilePath (string s)
+{
+    filePath = s;
+}
+
+#if false
 
 int Config::getInt (string varName) throw(NotFoundException)
 {
@@ -31,7 +31,7 @@ int Config::getInt (string varName) throw(NotFoundException)
     string realVarType = state["__t__"];
     if (realVarType == "nil") throw NotFoundException();
     assert(state["__t__"] == "number");
-    return strtol(state[varName], NULL, 10);
+    return state[varName];
 }
 
 bool Config::getBool (string varName) throw(NotFoundException)
@@ -40,7 +40,7 @@ bool Config::getBool (string varName) throw(NotFoundException)
     string realVarType = state["__t__"];
     if (realVarType == "nil") throw NotFoundException();
     assert(state["__t__"] == "boolean");
-    if (state[varName] == "true") return true; else return false;
+    return state[varName];
 }
 
 string Config::getString (string varName) throw(NotFoundException)
@@ -49,5 +49,22 @@ string Config::getString (string varName) throw(NotFoundException)
     string realVarType = state["__t__"];
     if (realVarType == "nil") throw NotFoundException();
     assert(state["__t__"] == "string");
+    return state[varName];
+}
+
+#endif
+
+int Config::getInt (string varName)
+{
+    return state[varName];
+}
+
+bool Config::getBool (string varName)
+{
+    return state[varName];
+}
+
+string Config::getString (string varName)
+{
     return state[varName];
 }

@@ -5,29 +5,35 @@
 #ifndef THECAR_CONFIG_HPP
 #define THECAR_CONFIG_HPP
 
+#define CGET_INT(s) Config::getInstance().getInt(s)
+#define CGET_STR(s) Config::getInstance().getString(s)
+#define CGET_BOOL(s) Config::getInstance().getBool(s)
+
 #include <string>
 
 using namespace std;
 
 const string DEFAULT_CONFIG_PATH = "/etc/TheCarConfig.lua";
 
+#if false
 typedef class NotFoundException : public exception
 {
 } NotFoundException;
+#endif
 
+// singletone
 class Config
 {
 private:
+    static string filePath;
 
-    Config (string configPath) throw(NotFoundException);
+    Config (string configPath);
 
-    Config (const Config &) throw(NotFoundException);
+    Config (const Config &);
 
     Config & operator= (Config &);
 
 public:
-    static string filePath;
-
     static Config & getInstance ()
     {
         if (filePath == "")
@@ -38,11 +44,13 @@ public:
         return instance;
     }
 
-    int getInt (string) throw(NotFoundException);
+    static void setFilePath (string s);
 
-    bool getBool (string) throw(NotFoundException);
+    int getInt (string);
 
-    string getString (string) throw(NotFoundException);
+    bool getBool (string);
+
+    string getString (string);
 };
 
 #endif //THECAR_CONFIG_HPP

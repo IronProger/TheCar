@@ -20,9 +20,9 @@ const int RESOLUTION_OF_IMAGE_FOR_DETECTION = 20;
 class OnItemFoundListener
 {
     /** mat is a resolution-fixed black-white image for item detection */
-public: int operator ()(
-            int mat[RESOLUTION_OF_IMAGE_FOR_DETECTION][RESOLUTION_OF_IMAGE_FOR_DETECTION], int size
-    ) { };
+public:
+    virtual int operator()
+            (int mat[RESOLUTION_OF_IMAGE_FOR_DETECTION][RESOLUTION_OF_IMAGE_FOR_DETECTION], int size);
 };
 
 // singleton
@@ -55,7 +55,7 @@ public:
 
     // warning: this method block the thread (road sign detection start)
     // thread must be unlocked only at program shutdown
-    void start (OnItemFoundListener onItemFoundListener);
+    void start (void (* onItemFoundListener) (int **, int));
 };
 
 #endif //THECAR_THECARCV_HPP
