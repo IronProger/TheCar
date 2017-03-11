@@ -4,6 +4,7 @@
 
 #include "TheCarCV.hpp"
 #include "Config.hpp"
+#include "RoboControl.hpp"
 
 using namespace std;
 
@@ -26,10 +27,13 @@ int main (int arg, char ** argv)
         TheCarCV::getInstance().turnOnWindows();
     }
 
-    TheCarCV::getInstance().start([] (int * matrix[20], int distance)
-                                  {
-                                      LOGD << "some sign item put";
-                                  });
+    TheCarCV::getInstance().start(
+            [] (RoadSignData data)
+            {
+                LOGD << "some sign item put";
+                RoboControl::getInstance().sendStrViaSerial("1");
+            }
+    );
 
     return 0;
 }

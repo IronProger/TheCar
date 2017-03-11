@@ -27,16 +27,16 @@ BLUE_I_HIGH_V = 255
 
 --[ GUI ]--
 
-SHOW_WINDOWS = false
+SHOW_WINDOWS = true
 
 
 --[ video ]--
 
-VIDEO_INPUT_SOURCE_NUMBER = 1
+VIDEO_INPUT_SOURCE_NUMBER = 0
 
 --[ Hough circle transform parametrs ]--
 
-H_DP = 10
+H_DP = 40
 H_MINDIST = 10
 H_PARAM1 = 300
 H_PARAM2 = 300
@@ -45,4 +45,10 @@ H_MAXRADIUS = 150
 
 --[ other ]--
 
-EDGE_TRASHHOLD = 20
+EDGE_THRESHOLD = 10
+FOLDER_FOR_TEST_IMAGES_OUTPUT = "test_images_output"
+
+--[ connection with robot ]--
+
+SERIAL_PORT = "/dev/ttyACM0"
+FAKE_SERIAL = true -- replace real serial with stdout
