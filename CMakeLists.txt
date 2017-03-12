@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.6)
+cmake_minimum_required(VERSION 3.5)
 project(TheCar)
 
 set(CMAKE_CXX_STANDARD 14)
@@ -16,12 +16,13 @@ link_libraries (
         opencv_videoio
         opencv_photo
         opencv_xphoto
-        opencv_cvv
         opencv_imgcodecs
         lua
-        pthread
+        ${LUA_LIBRARIES}
+        ${OPENCV_LIBRARIES}
         serial
+        stdc++fs
 )
 
-set(SOURCE_FILES main.cpp TheCarCV.cpp TheCarCV.hpp Config.cpp Config.hpp)
+set(SOURCE_FILES main.cpp TheCarCV.cpp TheCarCV.hpp Config.cpp Config.hpp RoboControl.cpp RoboControl.hpp)
 add_executable(TheCar ${SOURCE_FILES})

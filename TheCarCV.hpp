@@ -7,23 +7,21 @@
 
 #include <functional>
 
-#define WIN if (TheCarCV::getInstance().isShowingWindows())
+#define IFWIN if (TheCarCV::getInstance().isShowingWindows())
 
 //TODO: this enum to sign detect hpp
-typedef enum RoadSign
+typedef enum RoadSignType
 { ONLY_FORWARD, ONLY_RIGHT, ONLY_LEFT, ONLY_FORWARD_AND_RIGHT, ONLY_FORWARD_AND_LEFT,
 TRAFFIC_LIGHT, STOP, WAY_IS_BUNNED}
         RoadSign;
 
 const int RESOLUTION_OF_IMAGE_FOR_DETECTION = 20;
 
-class OnItemFoundListener
+typedef struct RoadSignData
 {
-    /** mat is a resolution-fixed black-white image for item detection */
-public:
-    virtual int operator()
-            (int mat[RESOLUTION_OF_IMAGE_FOR_DETECTION][RESOLUTION_OF_IMAGE_FOR_DETECTION], int size);
-};
+    int mat[RESOLUTION_OF_IMAGE_FOR_DETECTION][RESOLUTION_OF_IMAGE_FOR_DETECTION];
+    int distance;
+} RoadSignData;
 
 // singleton
 class TheCarCV
@@ -55,7 +53,7 @@ public:
 
     // warning: this method block the thread (road sign detection start)
     // thread must be unlocked only at program shutdown
-    void start (void (* onItemFoundListener) (int **, int));
+    void start (void (* onItemFoundListener) (RoadSignData));
 };
 
 #endif //THECAR_THECARCV_HPP
