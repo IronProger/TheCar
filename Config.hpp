@@ -21,7 +21,7 @@ typedef class NotFoundException : public exception
 } NotFoundException;
 #endif
 
-// singletone
+// singleton
 class Config
 {
 private:

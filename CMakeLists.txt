@@ -6,6 +6,8 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_C_COMPILER "gcc")
 set(CMAKE_CXX_COMPILER "g++")
 
+link_directories("/usr/local/lib")
+
 link_libraries (
         opencv_core
         opencv_highgui
@@ -18,8 +20,6 @@ link_libraries (
         opencv_xphoto
         opencv_imgcodecs
         lua
-        ${LUA_LIBRARIES}
-        ${OPENCV_LIBRARIES}
         serial
         stdc++fs
 )

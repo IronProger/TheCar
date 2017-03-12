@@ -2,11 +2,6 @@
 // Created by rege on 08.03.17.
 //
 
-#include <string>
-#include <vector>
-#include <experimental/filesystem>
-
-#include <opencv2/opencv.hpp>
 #include <plog/Log.h>
 
 #include "TheCarCV.hpp"
@@ -17,48 +12,8 @@ using namespace experimental;
 
 /**
  * warning: before every line, which works with windows, macro “IFWIN” must be put
- * (this lines will be skipped)
+ * (this lines will be skipped when windows mode will be off)
  * */
-
-vector<string> windows{"original", "color filter", "blue", "red", "edges"}; // names for windows
-cv::VideoCapture * cap; //capture the video from web cam
-
-// for color filtering control
-int iLowH;
-int iHighH;
-int iLowS;
-int iHighS;
-int iLowV;
-int iHighV;
-
-int redILowH;
-int redIHighH;
-int redILowS;
-int redIHighS;
-int redILowV;
-int redIHighV;
-
-int blueILowH;
-int blueIHighH;
-int blueILowS;
-int blueIHighS;
-int blueILowV;
-int blueIHighV;
-
-// hough circle transform parametrs
-int hDp;
-int hMinDist;
-int hParam1;
-int hParam2;
-int hMinRadius;
-int hMaxRadius;
-
-int edgeThreshold;
-
-string dirForTestImagesOutput;
-
-
-void processFrame (cv::Mat frame, vector<RoadSignData> & roadSigns);
 
 TheCarCV::TheCarCV ()
 {
@@ -78,7 +33,7 @@ void TheCarCV::turnOnWindows ()
 
     /// creating windows
 
-    for (string & winName : windows)
+    for (string & winName : *windows)
     {
         cv::namedWindow(winName, CV_WINDOW_AUTOSIZE);
     }
@@ -107,6 +62,11 @@ void TheCarCV::turnOnWindows ()
 void TheCarCV::init ()
 {
     LOGD << "TheCarCV init…";
+
+    /// video output init
+
+    // names for windows, which will be created
+    IFWIN windows = new vector<string>{"original", "color filter", "blue", "red", "edges"};
 
     /// video input init
 
@@ -154,7 +114,7 @@ void TheCarCV::init ()
 
     edgeThreshold = CGET_INT("EDGE_THRESHOLD");
 
-    dirForTestImagesOutput = CGET_STR("FOLDER_FOR_TEST_IMAGES_OUTPUT");
+    dirForTestImagesOutput = (char *) CGET_STR("FOLDER_FOR_TEST_IMAGES_OUTPUT").c_str();
 
     /// prepare system
 
@@ -194,11 +154,11 @@ void TheCarCV::start (void (* onItemFoundListener) (RoadSignData))
     LOGI << "TheCarCV terminated";
 }
 
-void hsvFilter (
+void TheCarCV::hsvFilter (
         cv::Mat & src, cv::Mat & dsc,
-        int lh = iLowH, int hh = iHighH,
-        int ls = iLowS, int hs = iHighS,
-        int lv = iLowV, int hv = iHighV
+        int lh, int hh,
+        int ls, int hs,
+        int lv, int hv
 )
 {
     cv::Mat imgHSV;
@@ -221,7 +181,7 @@ void hsvFilter (
     dsc = imgThresholded;
 }
 
-vector<cv::Vec3f> getCirclesFromMonochrome (cv::Mat blackWhite)
+vector<cv::Vec3f> TheCarCV::getCirclesFromMonochrome (cv::Mat blackWhite)
 {
     vector<cv::Vec3f> circles;
     HoughCircles(blackWhite, circles, CV_HOUGH_GRADIENT,
@@ -236,7 +196,7 @@ vector<cv::Vec3f> getCirclesFromMonochrome (cv::Mat blackWhite)
 
 // resize an image to resolution for detection (which equals const RESOLUTION_OF_IMAGE_FOR_DETECTION)
 // if success or changes doesn't needs then return true, if src image resolution smaller than RESOLUTION_OF_IMAGE_FOR_DETECTION then return false
-bool resizeForDetection (cv::Mat & src, cv::Mat & dsc)
+bool TheCarCV::resizeForDetection (cv::Mat & src, cv::Mat & dsc)
 {
     if (src.rows == RESOLUTION_OF_IMAGE_FOR_DETECTION && src.cols == RESOLUTION_OF_IMAGE_FOR_DETECTION)
     {
@@ -255,20 +215,21 @@ bool resizeForDetection (cv::Mat & src, cv::Mat & dsc)
 }
 
 // edges detection with controlable trashhold
-void edgeDetect (cv::Mat & src, cv::Mat & dsc)
+void TheCarCV::edgeDetect (cv::Mat & src, cv::Mat & dsc)
 {
     cv::Mat srcGray;
     cvtColor(src, srcGray, CV_BGR2GRAY);
-    cv::Mat edges;
-    cv::blur(srcGray, edges, cv::Size(3, 3));
+    cv::blur(srcGray, srcGray, cv::Size(3, 3));
     int ratio = 3;
     int kernel_size = 3;
-    cv::Canny(edges, edges, edgeThreshold, edgeThreshold * ratio, kernel_size);
+    cv::Mat edges;
+    cv::Canny(srcGray, edges, edgeThreshold, edgeThreshold * ratio, kernel_size);
     dsc = edges;
 }
 
 // if success then return true else return false
-bool cutSquareRegionByCircle (cv::Mat & src, cv::Mat & dsc, int x, int y, int radius)
+// do not resize a result image — it's already resized to RESOLUTION_OF_IMAGE_FOR_DETECTION
+bool TheCarCV::cutSquareRegionByCircle (cv::Mat & src, cv::Mat & dsc, int x, int y, int radius)
 {
     // first math rect x and y, height and width
     int rectX, rectY, rectHeight, rectWidth;
@@ -294,12 +255,12 @@ bool cutSquareRegionByCircle (cv::Mat & src, cv::Mat & dsc, int x, int y, int ra
     return resizeForDetection(cutRect, src);
 }
 
-inline bool cutSquareRegionByCircle (cv::Mat & src, cv::Mat & dsc, cv::Vec3f circle)
+inline bool TheCarCV::cutSquareRegionByCircle (cv::Mat & src, cv::Mat & dsc, cv::Vec3f circle)
 {
     return cutSquareRegionByCircle(src, dsc, circle[0], circle[1], circle[2]);
 }
 
-void processFrame (cv::Mat frame, vector<RoadSignData> & roadSigns)
+void TheCarCV::processFrame (cv::Mat frame, vector<RoadSignData> & roadSigns)
 {
     roadSigns.clear();
 
@@ -307,7 +268,7 @@ void processFrame (cv::Mat frame, vector<RoadSignData> & roadSigns)
     IFWIN
     {
         cv::Mat colorFilterContr;
-        hsvFilter(frame, colorFilterContr);
+        hsvFilter(frame, colorFilterContr, iLowH, iHighH, iLowS, iHighS, iLowV, iHighV);
         cv::imshow("color filter", colorFilterContr);
         vector<cv::Vec3f> circles = getCirclesFromMonochrome(colorFilterContr);
         for (cv::Vec3f & c : circles) // show found circles
@@ -331,8 +292,6 @@ void processFrame (cv::Mat frame, vector<RoadSignData> & roadSigns)
         }
     }
 
-    IFWIN cv::imshow("original", frame);
-
     cv::Mat red;
     hsvFilter(frame, red, redILowH, redIHighH, redILowS, redIHighS, redILowV, redIHighV);
     IFWIN cv::imshow("red", red);
@@ -343,11 +302,13 @@ void processFrame (cv::Mat frame, vector<RoadSignData> & roadSigns)
 
     //tmp code
     {
-        auto onCircleFound = [&edges] (cv::Vec3f circle)
+        auto onCircleFound = [this, &frame, &edges] (cv::Vec3f circle)
         {
+            cv::Point center(cvRound(circle[0]), cvRound(circle[1]));
+            cv::circle(frame, center, circle[2], cv::Scalar(150, 50, 0), 3, CV_AA, 0);
             static int i;
             cv::Mat square;
-            if (!cutSquareRegionByCircle(edges, square, circle))
+            if (!cutSquareRegionByCircle(edges, square, (const cv::Vec3f) circle))
             {
                 LOGW << "cutSquareRegionByCircle() function call returned false. Image haven't get and will not saved";
                 return;
@@ -361,4 +322,6 @@ void processFrame (cv::Mat frame, vector<RoadSignData> & roadSigns)
         vector<cv::Vec3f> blueCircles = getCirclesFromMonochrome(blue);
         for (cv::Vec3f & item : blueCircles) onCircleFound(item);
     }
+
+    IFWIN cv::imshow("original", frame);
 }

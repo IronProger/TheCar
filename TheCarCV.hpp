@@ -5,17 +5,25 @@
 #ifndef THECAR_THECARCV_HPP
 #define THECAR_THECARCV_HPP
 
-#include <functional>
+#include <string>
+#include <vector>
+#include <experimental/filesystem>
+
+#include <opencv2/opencv.hpp>
+
+using namespace std;
 
 #define IFWIN if (TheCarCV::getInstance().isShowingWindows())
 
 //TODO: this enum to sign detect hpp
 typedef enum RoadSignType
-{ ONLY_FORWARD, ONLY_RIGHT, ONLY_LEFT, ONLY_FORWARD_AND_RIGHT, ONLY_FORWARD_AND_LEFT,
-TRAFFIC_LIGHT, STOP, WAY_IS_BUNNED}
+{
+    ONLY_FORWARD, ONLY_RIGHT, ONLY_LEFT, ONLY_FORWARD_AND_RIGHT, ONLY_FORWARD_AND_LEFT,
+    TRAFFIC_LIGHT, STOP, WAY_IS_BUNNED
+}
         RoadSign;
 
-const int RESOLUTION_OF_IMAGE_FOR_DETECTION = 20;
+const int RESOLUTION_OF_IMAGE_FOR_DETECTION = 30;
 
 typedef struct RoadSignData
 {
@@ -27,7 +35,23 @@ typedef struct RoadSignData
 class TheCarCV
 {
 private:
-    bool createWindows = false;
+    // for color filtering control
+    int iLowH, iHighH, iLowS, iHighS, iLowV, iHighV;
+
+    int redILowH, redIHighH, redILowS, redIHighS, redILowV, redIHighV;
+
+    int blueILowH, blueIHighH, blueILowS, blueIHighS, blueILowV, blueIHighV;
+
+    // hough circle transform parametrs
+    int hDp, hMinDist, hParam1, hParam2, hMinRadius, hMaxRadius;
+
+    int edgeThreshold;
+
+    string dirForTestImagesOutput;
+    bool createWindows;
+
+    cv::VideoCapture * cap;
+    vector<string> * windows;
 
     TheCarCV ();
 
@@ -36,6 +60,25 @@ private:
     TheCarCV & operator= (TheCarCV &);
 
     void init ();
+
+    void hsvFilter (
+            cv::Mat & src, cv::Mat & dsc,
+            int lh, int hh,
+            int ls, int hs,
+            int lv, int hv
+    );
+
+    vector<cv::Vec3f> getCirclesFromMonochrome (cv::Mat blackWhite);
+
+    bool resizeForDetection (cv::Mat & src, cv::Mat & dsc);
+
+    void edgeDetect (cv::Mat & src, cv::Mat & dsc);
+
+    bool cutSquareRegionByCircle (cv::Mat & src, cv::Mat & dsc, int x, int y, int radius);
+
+    inline bool cutSquareRegionByCircle (cv::Mat & src, cv::Mat & dsc, cv::Vec3f circle);
+
+    void processFrame (cv::Mat frame, vector<RoadSignData> & roadSigns);
 
 public:
 
