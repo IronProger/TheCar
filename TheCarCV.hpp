@@ -15,15 +15,7 @@ using namespace std;
 
 #define IFWIN if (TheCarCV::getInstance().isShowingWindows())
 
-//TODO: this enum to sign detect hpp
-typedef enum RoadSignType
-{
-    ONLY_FORWARD, ONLY_RIGHT, ONLY_LEFT, ONLY_FORWARD_AND_RIGHT, ONLY_FORWARD_AND_LEFT,
-    TRAFFIC_LIGHT, STOP, WAY_IS_BUNNED
-}
-        RoadSign;
-
-const int RESOLUTION_OF_IMAGE_FOR_DETECTION = 30;
+const int RESOLUTION_OF_IMAGE_FOR_DETECTION = 50;
 
 typedef struct RoadSignData
 {
@@ -42,7 +34,7 @@ private:
 
     int blueILowH, blueIHighH, blueILowS, blueIHighS, blueILowV, blueIHighV;
 
-    // hough circle transform parametrs
+    // hough circle transform parameters
     int hDp, hMinDist, hParam1, hParam2, hMinRadius, hMaxRadius;
 
     int edgeThreshold;
@@ -77,6 +69,8 @@ private:
     bool cutSquareRegionByCircle (cv::Mat & src, cv::Mat & dsc, int x, int y, int radius);
 
     inline bool cutSquareRegionByCircle (cv::Mat & src, cv::Mat & dsc, cv::Vec3f circle);
+
+    double getSumOfPositivePoints (cv::Mat monochromeImage);
 
     void processFrame (cv::Mat frame, vector<RoadSignData> & roadSigns);
 

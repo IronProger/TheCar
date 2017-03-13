@@ -6,9 +6,9 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_C_COMPILER "gcc")
 set(CMAKE_CXX_COMPILER "g++")
 
-link_directories("/usr/local/lib")
+#link_directories("/usr/local/lib")
 
-link_libraries (
+link_libraries(
         opencv_core
         opencv_highgui
         opencv_imgproc
@@ -22,7 +22,8 @@ link_libraries (
         lua
         serial
         stdc++fs
+        pthread
 )
 
-set(SOURCE_FILES main.cpp TheCarCV.cpp TheCarCV.hpp Config.cpp Config.hpp RoboControl.cpp RoboControl.hpp)
+set(SOURCE_FILES main.cpp TheCarCV.cpp TheCarCV.hpp Config.cpp Config.hpp RoboControl.cpp RoboControl.hpp Detect.cpp Detect.hpp maps.hpp Hopfield.cpp Hopfield.hpp)
 add_executable(TheCar ${SOURCE_FILES})

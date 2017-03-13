@@ -10,7 +10,7 @@
 serial::Serial * serialOut1;
 bool fakeSerial;
 
-void init ()
+void RoboControl::init ()
 {
     fakeSerial = CGET_BOOL("FAKE_SERIAL");
     if (!fakeSerial) serialOut1 = new serial::Serial(CGET_STR("SERIAL_PORT"), 9600);

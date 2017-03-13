@@ -17,6 +17,8 @@ private:
 
     RoboControl & operator= (RoboControl &);
 
+    void init ();
+
 public:
     static RoboControl & getInstance ()
     {

@@ -3,9 +3,12 @@
 //
 
 #include <plog/Log.h>
+#include <opencv2/opencv.hpp>
 
 #include "TheCarCV.hpp"
 #include "Config.hpp"
+#include "Detect.hpp"
+
 
 using namespace std;
 using namespace experimental;
@@ -51,8 +54,8 @@ void TheCarCV::turnOnWindows ()
 
     cv::createTrackbar("dp", "color filter", &hDp, 200);
     cv::createTrackbar("minDist", "color filter", &hMinDist, 200);
-    cv::createTrackbar("param1", "color filter", &hParam1, 300);
-    cv::createTrackbar("param2", "color filter", &hParam2, 300);
+    cv::createTrackbar("param1", "color filter", &hParam1, 1000);
+    cv::createTrackbar("param2", "color filter", &hParam2, 1000);
     cv::createTrackbar("minRadius", "color filter", &hMinRadius, 200);
     cv::createTrackbar("maxRadius", "color filter", &hMaxRadius, 200);
 
@@ -66,10 +69,11 @@ void TheCarCV::init ()
     /// video output init
 
     // names for windows, which will be created
-    IFWIN windows = new vector<string>{"original", "color filter", "blue", "red", "edges"};
+    windows = new vector<string>{"original", "color filter", "blue", "red", "edges", "xor"};
 
     /// video input init
 
+    LOGD << "trying to set a webcam";
     int videoInputSourceNumber = CGET_INT("VIDEO_INPUT_SOURCE_NUMBER");
     try
     {
@@ -114,7 +118,7 @@ void TheCarCV::init ()
 
     edgeThreshold = CGET_INT("EDGE_THRESHOLD");
 
-    dirForTestImagesOutput = (char *) CGET_STR("FOLDER_FOR_TEST_IMAGES_OUTPUT").c_str();
+    dirForTestImagesOutput = CGET_STR("FOLDER_FOR_TEST_IMAGES_OUTPUT");
 
     /// prepare system
 
@@ -212,6 +216,7 @@ bool TheCarCV::resizeForDetection (cv::Mat & src, cv::Mat & dsc)
         return false;
     }
     cv::resize(src, dsc, cv::Size(RESOLUTION_OF_IMAGE_FOR_DETECTION, RESOLUTION_OF_IMAGE_FOR_DETECTION));
+    return true;
 }
 
 // edges detection with controlable trashhold
@@ -220,7 +225,7 @@ void TheCarCV::edgeDetect (cv::Mat & src, cv::Mat & dsc)
     cv::Mat srcGray;
     cvtColor(src, srcGray, CV_BGR2GRAY);
     cv::blur(srcGray, srcGray, cv::Size(3, 3));
-    int ratio = 3;
+    int ratio = 7;
     int kernel_size = 3;
     cv::Mat edges;
     cv::Canny(srcGray, edges, edgeThreshold, edgeThreshold * ratio, kernel_size);
@@ -252,7 +257,7 @@ bool TheCarCV::cutSquareRegionByCircle (cv::Mat & src, cv::Mat & dsc, int x, int
         return false;
     }
 
-    return resizeForDetection(cutRect, src);
+    return resizeForDetection(cutRect, dsc);
 }
 
 inline bool TheCarCV::cutSquareRegionByCircle (cv::Mat & src, cv::Mat & dsc, cv::Vec3f circle)
@@ -260,9 +265,114 @@ inline bool TheCarCV::cutSquareRegionByCircle (cv::Mat & src, cv::Mat & dsc, cv:
     return cutSquareRegionByCircle(src, dsc, circle[0], circle[1], circle[2]);
 }
 
+double TheCarCV::getSumOfPositivePoints (cv::Mat monochromeImage)
+{
+    double sum = 0;
+    int cols = monochromeImage.cols, rows = monochromeImage.rows;
+    if (monochromeImage.isContinuous())
+    {
+        cols *= rows;
+        rows = 1;
+    }
+    for (int i = 0; i < rows; i++)
+    {
+        const double * Mi = monochromeImage.ptr<double>(i);
+        for (int j = 0; j < cols; j++)
+            sum += std::max(Mi[j], 0.);
+    }
+    return sum;
+}
+
 void TheCarCV::processFrame (cv::Mat frame, vector<RoadSignData> & roadSigns)
 {
     roadSigns.clear();
+
+    // for user experiments
+    cv::Mat edges;
+    edgeDetect(frame, edges);
+#if false
+    IFWIN
+    {
+        cv::imshow("edges", edges);
+        vector<cv::Vec3f> circles = getCirclesFromMonochrome(edges);
+        for (cv::Vec3f & c : circles) // show found circles
+        {
+            cv::Point center(cvRound(c[0]), cvRound(c[1]));
+            cv::circle(frame, center, c[2], cv::Scalar(0, 50, 150), 3, CV_AA, 0); // ~red circles
+            cv::Mat result;
+            cutSquareRegionByCircle(edges, result, c);
+            static int i;
+            cv::imwrite(dirForTestImagesOutput+"/edges_test_output"+to_string(i++)+".jpg", result);
+        }
+    }
+#endif
+
+    cv::Mat red;
+    hsvFilter(frame, red, redILowH, redIHighH, redILowS, redIHighS, redILowV, redIHighV);
+    IFWIN cv::imshow("red", red);
+
+    cv::Mat blue;
+    hsvFilter(frame, blue, blueILowH, blueIHighH, blueILowS, blueIHighS, blueILowV, blueIHighV);
+    IFWIN cv::imshow("blue", blue);
+
+
+    cv::Mat orEd;
+    cv::bitwise_or(red, blue, orEd);
+    cv::Mat xorEd;
+    cv::bitwise_xor(orEd, edges, xorEd);
+    IFWIN cv::imshow("xor", xorEd);
+
+    auto circles = getCirclesFromMonochrome(xorEd);
+    for (cv::Vec3f & circle : circles)
+    {
+        cv::Mat result;
+
+        double sum = getSumOfPositivePoints(result);
+
+        LOGD << "sum: "+to_string(sum);
+
+        if (cutSquareRegionByCircle(xorEd, result, (const cv::Vec3f) circle))
+        {
+            cv::circle(frame, cv::Point(cvRound(circle[0]), cvRound(circle[1])), circle[2], cv::Scalar(50, 150, 0), 3,
+                       CV_AA, 0); // ~green color
+            static int i;
+            cv::imwrite(dirForTestImagesOutput+"/xor_test_output"+to_string(i++)+".jpg", result);
+
+            RoadSignType sign = Detect::getInstance().detect(result);
+            switch (sign)
+            {
+                UNKNOWN:
+                    LOGD << "Cannot detect an image";
+                    break;
+                default:
+                    LOGD << "image has detected successfully, image type is "+to_string(sign);
+            }
+        }
+
+    }
+
+#if false
+    //tmp code
+    {
+        auto onCircleFound = [this, &frame, &edges] (cv::Vec3f circle)
+        {
+            cv::Point center(cvRound(circle[0]), cvRound(circle[1]));
+            cv::circle(frame, center, circle[2], cv::Scalar(150, 50, 0), 3, CV_AA, 0); // ~blue circles
+            static int i;
+            cv::Mat square;
+            if (!cutSquareRegionByCircle(edges, square, (const cv::Vec3f) circle))
+            {
+                //LOGW << "cutSquareRegionByCircle() function call returned false. Image haven't get and will not saved";
+                return;
+            }
+            cv::imwrite(dirForTestImagesOutput+"/color_test_output"+to_string(i++)+".jpg", square);
+        };
+        // tmp code
+        vector<cv::Vec3f> redCircles = getCirclesFromMonochrome(red);
+        for (cv::Vec3f & item : redCircles) onCircleFound(item);
+        vector<cv::Vec3f> blueCircles = getCirclesFromMonochrome(blue);
+        for (cv::Vec3f & item : blueCircles) onCircleFound(item);
+    }
 
     // HSV filtering image show special for user experiments
     IFWIN
@@ -274,54 +384,10 @@ void TheCarCV::processFrame (cv::Mat frame, vector<RoadSignData> & roadSigns)
         for (cv::Vec3f & c : circles) // show found circles
         {
             cv::Point center(cvRound(c[0]), cvRound(c[1]));
-            cv::circle(frame, center, c[2], cv::Scalar(0, 100, 50), 3, CV_AA, 0);
+            cv::circle(frame, center, c[2], cv::Scalar(0, 150, 50), 3, CV_AA, 0); // ~green circles
         }
     }
-
-    // for user experiments too
-    cv::Mat edges;
-    edgeDetect(frame, edges);
-    IFWIN
-    {
-        cv::imshow("edges", edges);
-        vector<cv::Vec3f> circles = getCirclesFromMonochrome(edges);
-        for (cv::Vec3f & c : circles) // show found circles
-        {
-            cv::Point center(cvRound(c[0]), cvRound(c[1]));
-            cv::circle(frame, center, c[2], cv::Scalar(0, 50, 150), 3, CV_AA, 0);
-        }
-    }
-
-    cv::Mat red;
-    hsvFilter(frame, red, redILowH, redIHighH, redILowS, redIHighS, redILowV, redIHighV);
-    IFWIN cv::imshow("red", red);
-
-    cv::Mat blue;
-    hsvFilter(frame, blue, blueILowH, blueIHighH, blueILowS, blueIHighS, blueILowV, blueIHighV);
-    IFWIN cv::imshow("blue", blue);
-
-    //tmp code
-    {
-        auto onCircleFound = [this, &frame, &edges] (cv::Vec3f circle)
-        {
-            cv::Point center(cvRound(circle[0]), cvRound(circle[1]));
-            cv::circle(frame, center, circle[2], cv::Scalar(150, 50, 0), 3, CV_AA, 0);
-            static int i;
-            cv::Mat square;
-            if (!cutSquareRegionByCircle(edges, square, (const cv::Vec3f) circle))
-            {
-                LOGW << "cutSquareRegionByCircle() function call returned false. Image haven't get and will not saved";
-                return;
-            }
-            cv::imwrite(dirForTestImagesOutput+"/test_output"+to_string(i++)+".jpg", square);
-        };
-        // tmp code
-        RoadSignData roadSignData;
-        vector<cv::Vec3f> redCircles = getCirclesFromMonochrome(red);
-        for (cv::Vec3f & item : redCircles) onCircleFound(item);
-        vector<cv::Vec3f> blueCircles = getCirclesFromMonochrome(blue);
-        for (cv::Vec3f & item : blueCircles) onCircleFound(item);
-    }
+#endif
 
     IFWIN cv::imshow("original", frame);
 }
