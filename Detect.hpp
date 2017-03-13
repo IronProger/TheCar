@@ -5,7 +5,7 @@
 #ifndef THECAR_NN_HPP
 #define THECAR_NN_HPP
 
-const int MAX_COUNT_OF_CHANGES_FOR_DETECTION = 1000;
+const int MAX_COUNT_OF_CHANGES_FOR_DETECTION = 500;
 
 enum RoadSignType
 {

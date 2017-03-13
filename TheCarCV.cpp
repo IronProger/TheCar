@@ -333,6 +333,12 @@ void TheCarCV::processFrame (cv::Mat frame, vector<RoadSignData> & roadSigns)
 
         if (cutSquareRegionByCircle(xorEd, result, (const cv::Vec3f) circle))
         {
+            if (cv::countNonZero(result)<
+            (RESOLUTION_OF_IMAGE_FOR_DETECTION*RESOLUTION_OF_IMAGE_FOR_DETECTION/2)) {
+                cv::circle(frame, cv::Point(cvRound(circle[0]), cvRound(circle[1])), circle[2], cv::Scalar(0, 0, 255), 3,
+                           CV_AA, 0); // ~green color
+                return;
+            }
             cv::circle(frame, cv::Point(cvRound(circle[0]), cvRound(circle[1])), circle[2], cv::Scalar(50, 150, 0), 3,
                        CV_AA, 0); // ~green color
             static int i;
