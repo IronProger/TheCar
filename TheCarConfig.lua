@@ -7,10 +7,10 @@
 RED_I_LOW_H = 0
 RED_I_HIGH_H = 30
 -- 0…255 (Saturation)
-RED_I_LOW_S = 120
+RED_I_LOW_S = 140
 RED_I_HIGH_S = 255
 -- 0…255 (Value)
-RED_I_LOW_V = 140
+RED_I_LOW_V = 160
 RED_I_HIGH_V = 255
 
 -- for blue road signs

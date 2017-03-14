@@ -97,7 +97,7 @@ bool Hopfield::compare (cv::Mat & src, cv::Mat & dsc, int maxCountOfChanges)
     int change = 0;
     while (!stable)
     {
-        if (change == maxCountOfChanges)
+        if (change >= maxCountOfChanges)
         {
             LOGD << "Out of max count of changes";
             return false;

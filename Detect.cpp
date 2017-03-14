@@ -24,16 +24,16 @@ void Detect::init ()
 {
     LOGD << "Detect using singleton init";
 
-    *signs = create_map<RoadSignType, cv::Mat>
+    signs = create_map<RoadSignType, cv::Mat>
             (ONLY_FORWARD, cv::imread("correct/ONLY_FORWARD.jpg", 0))
             (ONLY_RIGHT, cv::imread("correct/ONLY_RIGHT.jpg", 0))
             (ONLY_LEFT, cv::imread("correct/ONLY_LEFT.jpg", 0))
             (ONLY_RIGHT_OR_FORWARD, cv::imread("correct/ONLY_RIGHT_OR_FORWARD.jpg", 0))
             // where is traffic light? — in dream future only
-            (STOP, cv::imread("correct/STOP.jpg", 0))
-            (WAY_IS_BUNNED, cv::imread("correct/WAY_IS_BANNED.jpg", 0));
+            (STOP, cv::imread("correct/STOP.jpg", 0));
+            //(WAY_IS_BUNNED, cv::imread("correct/WAY_IS_BANNED.jpg", 0));
 
-    for (auto && kv : *signs)
+    for (auto && kv : signs)
     {
         hopfield.addPattern(kv.second);
     }
@@ -50,7 +50,7 @@ RoadSignType Detect::detect (cv::Mat monochromeImage)
         return UNKNOWN;
     }
 
-    for (auto && kv : *signs)
+    for (auto && kv : signs)
     {
         cv::Mat xorEd;
         cv::bitwise_xor(kv.second, result, xorEd);

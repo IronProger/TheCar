@@ -69,7 +69,7 @@ void TheCarCV::init ()
     /// video output init
 
     // names for windows, which will be created
-    windows = new vector<string>{"original", "color filter", "blue", "red", "edges", "xor"};
+    windows = new vector<string>{"original", "color filter", "xor"}; // "blue", "red", "edges"};
 
     /// video input init
 
@@ -309,11 +309,11 @@ void TheCarCV::processFrame (cv::Mat frame, vector<RoadSignData> & roadSigns)
 
     cv::Mat red;
     hsvFilter(frame, red, redILowH, redIHighH, redILowS, redIHighS, redILowV, redIHighV);
-    IFWIN cv::imshow("red", red);
+    //IFWIN cv::imshow("red", red);
 
     cv::Mat blue;
     hsvFilter(frame, blue, blueILowH, blueIHighH, blueILowS, blueIHighS, blueILowV, blueIHighV);
-    IFWIN cv::imshow("blue", blue);
+    //IFWIN cv::imshow("blue", blue);
 
 
     cv::Mat orEd;
@@ -336,8 +336,8 @@ void TheCarCV::processFrame (cv::Mat frame, vector<RoadSignData> & roadSigns)
             if (cv::countNonZero(result)<
             (RESOLUTION_OF_IMAGE_FOR_DETECTION*RESOLUTION_OF_IMAGE_FOR_DETECTION/2)) {
                 cv::circle(frame, cv::Point(cvRound(circle[0]), cvRound(circle[1])), circle[2], cv::Scalar(0, 0, 255), 3,
-                           CV_AA, 0); // ~green color
-                return;
+                           CV_AA, 0); // red color
+                break;
             }
             cv::circle(frame, cv::Point(cvRound(circle[0]), cvRound(circle[1])), circle[2], cv::Scalar(50, 150, 0), 3,
                        CV_AA, 0); // ~green color

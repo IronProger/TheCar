@@ -5,7 +5,7 @@
 #ifndef THECAR_NN_HPP
 #define THECAR_NN_HPP
 
-const int MAX_COUNT_OF_CHANGES_FOR_DETECTION = 500;
+const int MAX_COUNT_OF_CHANGES_FOR_DETECTION = 1000;
 
 enum RoadSignType
 {
@@ -16,7 +16,7 @@ enum RoadSignType
 class Detect
 {
 private:
-    map<RoadSignType, cv::Mat> * signs;
+    map<RoadSignType, cv::Mat> signs;
 
     Detect ();
 
