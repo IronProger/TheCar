@@ -1,64 +1,106 @@
 //
-// Created by rege on 13.03.17.
+// Created by user on 15.03.17.
 //
-#include <boost/numeric/ublas/matrix.hpp>
-#include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <plog/Log.h>
-#include <map>
 
-#include "Hopfield.hpp"
+#include <opencv2/highgui.hpp>
+#include <opencv2/core/mat.hpp>
+#include <plog/Log.h>
+
 #include "Detect.hpp"
-#include "maps.hpp"
 
 using namespace std;
 
-Hopfield hopfield(50, 50);
+void Detect::init() {
+    // load all data
+    const cv::Mat onlyForward = cv::imread("correct/ONLY_FORWARD.jpg", 0);
+    const cv::Mat onlyRight = cv::imread("correct/ONLY_RIGHT.jpg", 0);
+    const cv::Mat onlyLeft = cv::imread("correct/ONLY_LEFT.jpg", 0);
+    const cv::Mat onlyRightOrForward = cv::imread("correct/ONLY_RIGHT_OR_FORWARD.jpg", 0);
+    const cv::Mat wayIsBanned = cv::imread("correct/WAY_IS_BANNED.jpg", 0);
+    const cv::Mat stop = cv::imread("correct/STOP.jpg", 0);
 
-Detect::Detect ()
-{
-    init();
-}
-
-void Detect::init ()
-{
-    LOGD << "Detect using singleton init";
-
-    signs = create_map<RoadSignType, cv::Mat>
-            (ONLY_FORWARD, cv::imread("correct/ONLY_FORWARD.jpg", 0))
-            (ONLY_RIGHT, cv::imread("correct/ONLY_RIGHT.jpg", 0))
-            (ONLY_LEFT, cv::imread("correct/ONLY_LEFT.jpg", 0))
-            (ONLY_RIGHT_OR_FORWARD, cv::imread("correct/ONLY_RIGHT_OR_FORWARD.jpg", 0))
+    correct = new std::map<RoadSignType, ImageVector>;
+    (*correct)[ONLY_FORWARD] = ImageVector(std::vector<cv::Mat>{
+            cv::imread("correct/ONLY_FORWARD_0.jpg"),
+            cv::imread("correct/ONLY_FORWARD_1.jpg"),
+            cv::imread("correct/ONLY_FORWARD_2.jpg"),
+            cv::imread("correct/ONLY_FORWARD_3.jpg"),
+            cv::imread("correct/ONLY_FORWARD_4.jpg")
+    });
+    (*correct)[ONLY_RIGHT] = ImageVector(cv::imread("correct/ONLY_RIGHT.jpg", 0));
+    (*correct)[ONLY_LEFT] = ImageVector(cv::imread("correct/ONLY_LEFT.jpg", 0));
+    (*correct)[ONLY_RIGHT_OR_FORWARD] = ImageVector(cv::imread("correct/ONLY_RIGHT_OR_FORWARD.jpg", 0));
+    (*correct)[WAY_IS_BANNED] = ImageVector(std::vector<cv::Mat>{
+            cv::imread("correct/WAY_IS_BANNED_0.jpg"),
+            cv::imread("correct/WAY_IS_BANNED_1.jpg"),
+            cv::imread("correct/WAY_IS_BANNED_2.jpg"),
+            cv::imread("correct/WAY_IS_BANNED_3.jpg"),
+            cv::imread("correct/WAY_IS_BANNED_4.jpg")
+    });
+    (*correct)[STOP] = ImageVector(cv::imread("correct/STOP.jpg", 0));
+#if false
+    *correct = create_map<RoadSignType, ImageVector>
+            (ONLY_FORWARD, ImageVector(
+                    onlyForward
+            ))
+            (ONLY_RIGHT, ImageVector(
+                    onlyRight
+            ))
+            (ONLY_LEFT, ImageVector(
+                    onlyLeft
+            ))
+            (ONLY_RIGHT_OR_FORWARD, ImageVector(
+                    onlyRightOrForward
+            ))
             // where is traffic light? — in dream future only
-            (STOP, cv::imread("correct/STOP.jpg", 0));
-            //(WAY_IS_BUNNED, cv::imread("correct/WAY_IS_BANNED.jpg", 0));
-
-    for (auto && kv : signs)
-    {
-        hopfield.addPattern(kv.second);
-    }
-
-//     hopfield->calculateWeightsStorkey();
-    hopfield.calculateWeightsHebbian();
+            (WAY_IS_BANNED, ImageVector(
+                    wayIsBanned
+            ))
+            (STOP, ImageVector(
+                    stop
+            ));
+#endif
 }
 
-RoadSignType Detect::detect (cv::Mat monochromeImage)
-{
-    cv::Mat result;
-    if (!hopfield.compare(monochromeImage, result, MAX_COUNT_OF_CHANGES_FOR_DETECTION))
-    {
-        return UNKNOWN;
+double Detect::compare(ImageVector &s, ImageVector &x) {
+    assert(s.getSize() == x.getSize());
+    ulong size = s.getSize();
+    double sum = 0;
+    for (ulong i = 0; i < size; i++) {
+        sum += (s.get(i) * s.get(i));
     }
 
-    for (auto && kv : signs)
-    {
-        cv::Mat xorEd;
-        cv::bitwise_xor(kv.second, result, xorEd);
-        if (cv::countNonZero(xorEd) == 0)
-        {
-            return kv.first;
+    double sLen = s.vectorLen(), xLen = x.vectorLen();
+    double posit = sLen * xLen;
+    double toAcos = sum / posit;
+    if (toAcos > 1) toAcos -= 2;
+    double result = acos(toAcos);
+    if (result == NAN) LOGE << "NAN !!!";
+    return result;
+}
+
+RoadSignType Detect::detect(cv::Mat monochromeImage) {
+
+    double minAngle = 100; // 100 is impossible value, because 100
+    RoadSignType minAngleSign = UNKNOWN;
+
+    ImageVector iv(monochromeImage);
+
+    for (auto &&kv : *correct) {
+        double angle = compare(iv, kv.second);
+        if (angle < minAngle) {
+            minAngle = angle;
+            minAngleSign = kv.first;
         }
     }
-    LOGE << "sign in not UNKNOWN and cannot be found in map. I return UNKNOWN";
-    return UNKNOWN;
+    LOGD << "min angle: " + to_string(minAngle);
+
+    // image is bed
+    if (minAngle > 0.6) return UNKNOWN;
+
+    return minAngleSign;
+}
+
+Detect::Detect() {
+    init();
 }

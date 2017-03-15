@@ -25,5 +25,5 @@ link_libraries(
         pthread
 )
 
-set(SOURCE_FILES main.cpp TheCarCV.cpp TheCarCV.hpp Config.cpp Config.hpp RoboControl.cpp RoboControl.hpp Detect.cpp Detect.hpp maps.hpp Hopfield.cpp Hopfield.hpp)
+set(SOURCE_FILES main.cpp TheCarCV.cpp TheCarCV.hpp Config.cpp Config.hpp RoboControl.cpp RoboControl.hpp Detect.cpp Detect.hpp maps.hpp ImageVector.cpp ImageVector.hpp)
 add_executable(TheCar ${SOURCE_FILES})

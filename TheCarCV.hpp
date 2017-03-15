@@ -62,15 +62,13 @@ private:
 
     vector<cv::Vec3f> getCirclesFromMonochrome (cv::Mat blackWhite);
 
-    bool resizeForDetection (cv::Mat & src, cv::Mat & dsc);
+    bool resizeForDetectionAndMaskResult(cv::Mat &src, cv::Mat &dsc);
 
     void edgeDetect (cv::Mat & src, cv::Mat & dsc);
 
     bool cutSquareRegionByCircle (cv::Mat & src, cv::Mat & dsc, int x, int y, int radius);
 
     inline bool cutSquareRegionByCircle (cv::Mat & src, cv::Mat & dsc, cv::Vec3f circle);
-
-    double getSumOfPositivePoints (cv::Mat monochromeImage);
 
     void processFrame (cv::Mat frame, vector<RoadSignData> & roadSigns);
 
