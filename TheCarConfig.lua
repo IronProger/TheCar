@@ -27,7 +27,7 @@ BLUE_I_HIGH_V = 255
 
 --[ GUI ]--
 
-SHOW_WINDOWS = true
+SHOW_WINDOWS = false
 
 
 --[ video ]--
@@ -55,4 +55,4 @@ FAKE_SERIAL = true -- replace real serial with stdout
 
 --[ debug ]--
 
-SAVE_IMAGES = true
+SAVE_IMAGES = false

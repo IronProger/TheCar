@@ -4,6 +4,7 @@
 
 #include <plog/Log.h>
 #include <opencv2/opencv.hpp>
+#include <iostream>
 #include <time.h>
 
 #include "TheCarCV.hpp"
@@ -357,6 +358,7 @@ void TheCarCV::processFrame (cv::Mat frame, vector<RoadSignData> & roadSigns)
                     // this code must not bo completed:
                     throw (__exception());
             }
+	    std::cout << 1 << std::endl;
             LOGI << "Detection time: " + to_string(difftime(time(NULL), startDetectionTime)) + " seconds";
         }
 
