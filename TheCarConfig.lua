@@ -27,7 +27,7 @@ BLUE_I_HIGH_V = 255
 
 --[ GUI ]--
 
-SHOW_WINDOWS = false
+SHOW_WINDOWS = true
 
 
 --[ video ]--

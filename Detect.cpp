@@ -3,7 +3,6 @@
 //
 
 #include <opencv2/highgui.hpp>
-#include <opencv2/core/mat.hpp>
 #include <plog/Log.h>
 
 #include "Detect.hpp"
@@ -67,13 +66,12 @@ double Detect::compare(ImageVector &s, ImageVector &x) {
     ulong size = s.getSize();
     double sum = 0;
     for (ulong i = 0; i < size; i++) {
-        sum += (s.get(i) * s.get(i));
+        sum += (s.get(i) * x.get(i));
     }
 
     double sLen = s.vectorLen(), xLen = x.vectorLen();
     double posit = sLen * xLen;
     double toAcos = sum / posit;
-    if (toAcos > 1) toAcos -= 2;
     double result = acos(toAcos);
     if (result == NAN) LOGE << "NAN !!!";
     return result;
@@ -96,7 +94,7 @@ RoadSignType Detect::detect(cv::Mat monochromeImage) {
     LOGD << "min angle: " + to_string(minAngle);
 
     // image is bed
-    if (minAngle > 0.6) return UNKNOWN;
+    //if (minAngle > 0.6) return UNKNOWN;
 
     return minAngleSign;
 }

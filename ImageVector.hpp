@@ -21,8 +21,6 @@ public:
 
     uint get(ulong n);
 
-    uint set(ulong pos, uint v);
-
     double vectorLen();
 
     void add(ImageVector imageVector);
