@@ -36,7 +36,7 @@ VIDEO_INPUT_SOURCE_NUMBER = 0
 
 --[ Hough circle transform parametrs ]--
 
-H_DP = 24
+H_DP = 10
 H_MINDIST = 25
 H_PARAM1 = 200
 H_PARAM2 = 100
@@ -45,6 +45,7 @@ H_MAXRADIUS = 160
 
 --[ other ]--
 
+BLUR_K_SIZE = 5
 EDGE_THRESHOLD = 16
 FOLDER_FOR_TEST_IMAGES_OUTPUT = "test_images_output"
 
@@ -55,4 +56,4 @@ FAKE_SERIAL = true -- replace real serial with stdout
 
 --[ debug ]--
 
-SAVE_IMAGES = false
+SAVE_IMAGES = true

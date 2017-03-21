@@ -62,9 +62,11 @@ private:
 
     vector<cv::Vec3f> getCirclesFromMonochrome (cv::Mat blackWhite);
 
-    bool resizeForDetectionAndMaskResult(cv::Mat &src, cv::Mat &dsc);
+    bool resizeForDetectionAndMaskResult (cv::Mat & src, cv::Mat & dsc);
 
     void edgeDetect (cv::Mat & src, cv::Mat & dsc);
+
+    void blur (cv::Mat & src, cv::Mat & dsc);
 
     bool cutSquareRegionByCircle (cv::Mat & src, cv::Mat & dsc, int x, int y, int radius);
 

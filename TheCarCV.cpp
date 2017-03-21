@@ -71,7 +71,7 @@ void TheCarCV::init ()
     /// video output init
 
     // names for windows, which will be created
-    windows = new vector<string>{"original", "color filter", "xor"}; // "blue", "red", "edges"};
+    windows = new vector<string>{"original", "color filter", "xor"}; // "blured", "edges"}; // "blue", "red", "edges"};
 
     /// video input init
 
@@ -202,7 +202,8 @@ vector<cv::Vec3f> TheCarCV::getCirclesFromMonochrome (cv::Mat blackWhite)
 
 // resize an image to resolution for detection (which equals const RESOLUTION_OF_IMAGE_FOR_DETECTION)
 // if success or changes doesn't needs then return true, if src image resolution smaller than RESOLUTION_OF_IMAGE_FOR_DETECTION then return false
-bool TheCarCV::resizeForDetectionAndMaskResult(cv::Mat &src, cv::Mat &dsc)
+// finalize mask image
+bool TheCarCV::resizeForDetectionAndMaskResult (cv::Mat & src, cv::Mat & dsc)
 {
     if (src.rows == RESOLUTION_OF_IMAGE_FOR_DETECTION && src.cols == RESOLUTION_OF_IMAGE_FOR_DETECTION)
     {
@@ -231,12 +232,17 @@ bool TheCarCV::resizeForDetectionAndMaskResult(cv::Mat &src, cv::Mat &dsc)
     return true;
 }
 
+void TheCarCV::blur (cv::Mat & src, cv::Mat & dsc)
+{
+    int kSize = CGET_INT("BLUR_K_SIZE");
+    cv::blur(src, dsc, cv::Size(kSize, kSize));
+}
+
 // edges detection with controlable trashhold
 void TheCarCV::edgeDetect (cv::Mat & src, cv::Mat & dsc)
 {
     cv::Mat srcGray;
     cvtColor(src, srcGray, CV_BGR2GRAY);
-    cv::blur(srcGray, srcGray, cv::Size(3, 3));
     int ratio = 7;
     int kernel_size = 3;
     cv::Mat edges;
@@ -245,6 +251,7 @@ void TheCarCV::edgeDetect (cv::Mat & src, cv::Mat & dsc)
 }
 
 // if success then return true else return false
+// also return false if src is not a trust image for detection (smaller than 2/3 of square if white)
 // do not resize a result image — it's already resized to RESOLUTION_OF_IMAGE_FOR_DETECTION
 bool TheCarCV::cutSquareRegionByCircle (cv::Mat & src, cv::Mat & dsc, int x, int y, int radius)
 {
@@ -272,7 +279,8 @@ bool TheCarCV::cutSquareRegionByCircle (cv::Mat & src, cv::Mat & dsc, int x, int
     cv::Mat resultThresholded;
     cv::threshold(cutRect, resultThresholded, 170, 255, CV_THRESH_BINARY);
     if (cv::countNonZero(resultThresholded) <
-        (RESOLUTION_OF_IMAGE_FOR_DETECTION * RESOLUTION_OF_IMAGE_FOR_DETECTION / 2)) {
+        (RESOLUTION_OF_IMAGE_FOR_DETECTION * RESOLUTION_OF_IMAGE_FOR_DETECTION * 0.7))
+    {
         return false;
     }
 
@@ -288,18 +296,21 @@ void TheCarCV::processFrame (cv::Mat frame, vector<RoadSignData> & roadSigns)
 {
     roadSigns.clear();
 
-    // for user experiments
+    cv::Mat blured;
+    blur(frame, blured);
+    //IFWIN cv::imshow("blured", blured);
+
     cv::Mat edges;
-    edgeDetect(frame, edges);
+    edgeDetect(blured, edges);
+    //IFWIN cv::imshow("edges", edges);
 
     cv::Mat red;
-    hsvFilter(frame, red, redILowH, redIHighH, redILowS, redIHighS, redILowV, redIHighV);
+    hsvFilter(blured, red, redILowH, redIHighH, redILowS, redIHighS, redILowV, redIHighV);
     //IFWIN cv::imshow("red", red);
 
     cv::Mat blue;
-    hsvFilter(frame, blue, blueILowH, blueIHighH, blueILowS, blueIHighS, blueILowV, blueIHighV);
+    hsvFilter(blured, blue, blueILowH, blueIHighH, blueILowS, blueIHighS, blueILowV, blueIHighV);
     //IFWIN cv::imshow("blue", blue);
-
 
     cv::Mat orEd;
     cv::bitwise_or(red, blue, orEd);
@@ -308,9 +319,7 @@ void TheCarCV::processFrame (cv::Mat frame, vector<RoadSignData> & roadSigns)
     cv::blur(xorEd, xorEd, cv::Size(3, 3));
     IFWIN cv::imshow("xor", xorEd);
 
-
-    auto circles = getCirclesFromMonochrome(xorEd);
-    for (cv::Vec3f & circle : circles)
+    for (cv::Vec3f & circle : getCirclesFromMonochrome(xorEd))
     {
         cv::Mat result;
 
@@ -320,7 +329,7 @@ void TheCarCV::processFrame (cv::Mat frame, vector<RoadSignData> & roadSigns)
                        CV_AA, 0); // ~green color
             static int i;
             if (CGET_BOOL("SAVE_IMAGES"))
-                cv::imwrite(dirForTestImagesOutput + "/xor_test_output" + to_string(i++) + ".jpg", result);
+                cv::imwrite(dirForTestImagesOutput+"/xor_test_output"+to_string(i++)+".jpg", result);
 
             time_t startDetectionTime;
             time(&startDetectionTime);
@@ -358,8 +367,8 @@ void TheCarCV::processFrame (cv::Mat frame, vector<RoadSignData> & roadSigns)
                     // this code must not bo completed:
                     throw (__exception());
             }
-	    std::cout << 1 << std::endl;
-            LOGI << "Detection time: " + to_string(difftime(time(NULL), startDetectionTime)) + " seconds";
+            std::cout << 1 << std::endl;
+            LOGI << "Detection time: "+to_string(difftime(time(NULL), startDetectionTime))+"";
         }
 
     }
